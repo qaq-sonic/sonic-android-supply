@@ -18,33 +18,15 @@
 package util
 
 import (
-	"fmt"
-	"github.com/SonicCloudOrg/sonic-android-supply/src/adb"
-	"os"
 	"os/exec"
 	"regexp"
-)
 
-var (
-	localADBHost = "127.0.0.1"
-	localADBPort = 5037
+	"github.com/SonicCloudOrg/sonic-android-supply/src/adb"
 )
 
 func GetDevice(serial string) *adb.Device {
-	client := adb.NewClient(fmt.Sprintf("%s:%d", localADBHost, localADBPort))
-	if serial == "" {
-		serialList, err := GetSerialList("")
-		if err != nil {
-			panic(err)
-		}
-		if len(serialList) == 0 {
-			fmt.Println("failed to get serial list,not connect adb device")
-			os.Exit(0)
-		}
-		serial = serialList[0]
-	}
-	device := client.DeviceWithSerial(serial)
-	return device
+	client := adb.NewClient("")
+	return client.DeviceWithSerial2(serial)
 }
 
 func GetSerialList(adbPath string) (serialList []string, err error) {

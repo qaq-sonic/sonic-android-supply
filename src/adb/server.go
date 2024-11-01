@@ -24,6 +24,14 @@ func NewADBDaemon(device *Device) *ADBDaemon {
 	}
 }
 
+func NewADBDaemon2(serial string) *ADBDaemon {
+
+	return &ADBDaemon{
+		device:  NewClient("").DeviceWithSerial2(serial),
+		remotes: make(map[string]net.Conn),
+	}
+}
+
 func (s *ADBDaemon) ListenAndServe(addr string) error {
 	ln, err := net.Listen("tcp", addr)
 	if err != nil {

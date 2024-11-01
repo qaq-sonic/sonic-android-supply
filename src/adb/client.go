@@ -127,3 +127,13 @@ func (c *Client) Device(descriptor DeviceDescriptor) *Device {
 func (c *Client) DeviceWithSerial(serial string) *Device {
 	return c.Device(DeviceWithSerial(serial))
 }
+
+func (c *Client) DeviceWithSerial2(serial string) *Device {
+	return &Device{
+		client: c,
+		descriptor: DeviceDescriptor{
+			descriptorType: DeviceSerial,
+			serial:         serial,
+		},
+	}
+}

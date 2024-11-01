@@ -20,6 +20,7 @@ package cmd
 import (
 	"fmt"
 
+	"github.com/SonicCloudOrg/sonic-android-supply/pkg/version"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +29,7 @@ var versionCmd = &cobra.Command{
 	Short: "Version code of sas",
 	Long:  "Version code of sas",
 	Run: func(cmd *cobra.Command, args []string) {
-		fmt.Println("SONIC_VERSION")
+		fmt.Println(version.VERSION)
 	},
 }
 

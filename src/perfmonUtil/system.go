@@ -29,25 +29,25 @@ import (
 	"github.com/SonicCloudOrg/sonic-android-supply/src/entity"
 )
 
-func GetSystemCPU(client *adb.Device, perfOptions entity.PerfOption, perfmonDataChan chan *entity.PerfmonData, sign context.Context) {
+func GetSystemCPU(device *adb.Device, perfOptions entity.PerfOption, perfDataChan chan *entity.PerfmonData, exitCtx context.Context) {
 	if perfOptions.SystemCPU {
-		_ = getCPU(client, &entity.SystemInfo{})
+		_ = getCPU(device, &entity.SystemInfo{})
 		time.Sleep(time.Duration(IntervalTime * float64(time.Second)))
 		timer := time.Tick(time.Duration(int(IntervalTime * float64(time.Second))))
 		go func() {
 			for {
 				select {
-				case <-sign.Done():
+				case <-exitCtx.Done():
 					return
 				case <-timer:
 					go func() {
 						systemInfo := &entity.SystemInfo{}
-						err := getCPU(client, systemInfo)
+						err := getCPU(device, systemInfo)
 						if err != nil {
 							systemInfo.Error = append(systemInfo.Error, err.Error())
 						}
-						if perfmonDataChan != nil {
-							perfmonDataChan <- &entity.PerfmonData{
+						if perfDataChan != nil {
+							perfDataChan <- &entity.PerfmonData{
 								System: systemInfo,
 							}
 						}
@@ -60,24 +60,24 @@ func GetSystemCPU(client *adb.Device, perfOptions entity.PerfOption, perfmonData
 	return
 }
 
-func GetSystemMem(client *adb.Device, perfOptions entity.PerfOption, perfmonDataChan chan *entity.PerfmonData, sign context.Context) {
+func GetSystemMem(device *adb.Device, perfOptions entity.PerfOption, perfDataChan chan *entity.PerfmonData, exitCtx context.Context) {
 	if perfOptions.SystemMem {
 		timer := time.Tick(time.Duration(int(IntervalTime * float64(time.Second))))
 		go func() {
 			for {
 				select {
-				case <-sign.Done():
+				case <-exitCtx.Done():
 					return
 				case <-timer:
 					go func() {
 						systemInfo := &entity.SystemInfo{}
 						systemInfo.MemInfo = &entity.SystemMemInfo{}
-						err := getMemInfo(client, systemInfo)
+						err := getMemInfo(device, systemInfo)
 						if err != nil {
 							systemInfo.Error = append(systemInfo.Error, err.Error())
 						}
-						if perfmonDataChan != nil {
-							perfmonDataChan <- &entity.PerfmonData{
+						if perfDataChan != nil {
+							perfDataChan <- &entity.PerfmonData{
 								System: systemInfo,
 							}
 						}
@@ -91,27 +91,27 @@ func GetSystemMem(client *adb.Device, perfOptions entity.PerfOption, perfmonData
 	return
 }
 
-func GetSystemNetwork(client *adb.Device, perfOptions entity.PerfOption, perfmonDataChan chan *entity.PerfmonData, sign context.Context) {
+func GetSystemNetwork(device *adb.Device, perfOptions entity.PerfOption, perfDataChan chan *entity.PerfmonData, exitCtx context.Context) {
 	if perfOptions.SystemNetWorking {
 		timer := time.Tick(time.Duration(int(IntervalTime * float64(time.Second))))
 		go func() {
 			for {
 				select {
-				case <-sign.Done():
+				case <-exitCtx.Done():
 					return
 				case <-timer:
 					go func() {
 						systemInfo := &entity.SystemInfo{}
-						err := getInterfaces(client, systemInfo)
+						err := getInterfaces(device, systemInfo)
 						if err != nil {
 							systemInfo.Error = append(systemInfo.Error, err.Error())
 						}
-						err = getInterfaceInfo(client, systemInfo)
+						err = getInterfaceInfo(device, systemInfo)
 						if err != nil {
 							systemInfo.Error = append(systemInfo.Error, err.Error())
 						}
-						if perfmonDataChan != nil {
-							perfmonDataChan <- &entity.PerfmonData{
+						if perfDataChan != nil {
+							perfDataChan <- &entity.PerfmonData{
 								System: systemInfo,
 							}
 						}

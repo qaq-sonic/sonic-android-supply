@@ -20,9 +20,13 @@ package cmd
 import (
 	"context"
 	"fmt"
+	"log"
 	"os"
+	"os/exec"
 	"os/signal"
+	"regexp"
 
+	"github.com/SonicCloudOrg/sonic-android-supply/src/adb"
 	"github.com/SonicCloudOrg/sonic-android-supply/src/entity"
 	"github.com/SonicCloudOrg/sonic-android-supply/src/perfmonUtil"
 	"github.com/SonicCloudOrg/sonic-android-supply/src/util"
@@ -34,7 +38,23 @@ var perfmonCmd = &cobra.Command{
 	Short: "Get device performance",
 	Long:  "Get device performance",
 	RunE: func(cmd *cobra.Command, args []string) (err error) {
-		device := util.GetDevice(serial)
+		if serial == "" {
+			output, err := exec.Command("adb", "devices", "-l").CombinedOutput()
+			if err != nil {
+				log.Panic(err)
+			}
+			re := regexp.MustCompile(`(?m)^([^\s]+)\s+device\s+(.+)$`)
+			matches := re.FindAllStringSubmatch(string(output), -1)
+			if len(matches) == 0 {
+				log.Panic("no devices connected")
+			}
+			for _, m := range matches {
+				serial = m[1]
+				break
+			}
+		}
+
+		device := adb.NewClient("").DeviceWithSerial2(serial)
 		pidStr := ""
 		if isForce {
 			perfmonUtil.IsForce = true
@@ -104,6 +124,9 @@ var perfmonCmd = &cobra.Command{
 }
 
 var (
+	serial   string
+	isFormat bool
+	isJson   bool
 	perfOptions entity.PerfOption
 	pid         int
 	packageName string

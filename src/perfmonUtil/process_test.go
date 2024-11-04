@@ -2,29 +2,29 @@ package perfmonUtil
 
 import (
 	"fmt"
-	"github.com/SonicCloudOrg/sonic-android-supply/src/adb"
-	"github.com/SonicCloudOrg/sonic-android-supply/src/util"
 	"testing"
+
+	"github.com/SonicCloudOrg/sonic-android-supply/src/adb"
 )
 
 var device *adb.Device
 
 func setupDevice(serial string) {
-	device = util.GetDevice(serial)
+	device = adb.NewClient("").DeviceWithSerial2(serial)
 }
 
 func TestGetFPS(t *testing.T) {
-	setupDevice("S4NBPJTWP7W4954T")
+	setupDevice("AXGE022414002023")
 	r, _ := getProcessFPSBySurfaceFlinger(device, "com.android.browser")
 	fmt.Println(r)
 }
 
 func TestGetPackageCurrentActivity(t *testing.T) {
-	setupDevice("192.168.2.198:5555")
+	setupDevice("AXGE022414002023")
 	fmt.Println(getPackageCurrentActivity(device, "com.tencent.mm", "19799"))
 }
 
 func TestGet(t *testing.T) {
-	setupDevice("91cf5f1c")
+	setupDevice("AXGE022414002023")
 	fmt.Println(GetPidOnPackageName(device, "com.tencent.mm"))
 }

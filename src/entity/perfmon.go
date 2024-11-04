@@ -20,8 +20,9 @@ package entity
 import "encoding/json"
 
 type PerfmonData struct {
-	System  *SystemInfo  `json:"system,omitempty"`
-	Process *ProcessInfo `json:"process,omitempty"`
+	TimeStamp int64        `json:"timeStamp"`
+	System    *SystemInfo  `json:"system,omitempty"`
+	Process   *ProcessInfo `json:"process,omitempty"`
 }
 
 func (p *PerfmonData) ToJson() string {

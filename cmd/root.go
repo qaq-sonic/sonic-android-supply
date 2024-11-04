@@ -18,8 +18,9 @@
 package cmd
 
 import (
-	"github.com/spf13/cobra"
 	"os"
+
+	"github.com/spf13/cobra"
 )
 
 var rootCmd = &cobra.Command{
@@ -38,12 +39,6 @@ var rootCmd = &cobra.Command{
 https://github.com/SonicCloudOrg/sonic-android-supply
 `,
 }
-
-var (
-	serial   string
-	isFormat bool
-	isJson   bool
-)
 
 // Execute error
 func Execute() {

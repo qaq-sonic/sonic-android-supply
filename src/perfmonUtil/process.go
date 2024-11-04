@@ -459,18 +459,18 @@ func getPackageCurrentActivity(client *adb.Device, packageName string, pid strin
 	return dataSplit[1]
 }
 
-func GetProcThreads(client *adb.Device, perfOptions entity.PerfOption, perfmonDataChan chan *entity.PerfmonData, sign context.Context) {
+func GetProcThreads(device *adb.Device, perfOptions entity.PerfOption, perfDataChan chan *entity.PerfmonData, exitCtx context.Context) {
 	if perfOptions.ProcThreads {
 		timer := time.Tick(time.Duration(int(IntervalTime * float64(time.Second))))
 		go func() {
 			for {
 				select {
-				case <-sign.Done():
+				case <-exitCtx.Done():
 					return
 				case <-timer:
 					go func() {
-						perfmonDataChan <- &entity.PerfmonData{
-							Process: getThreads(client),
+						perfDataChan <- &entity.PerfmonData{
+							Process: getThreads(device),
 						}
 					}()
 
@@ -505,18 +505,18 @@ func getThreads(client *adb.Device) *entity.ProcessInfo {
 	return processInfo
 }
 
-func GetProcFPS(client *adb.Device, perfOptions entity.PerfOption, perfmonDataChan chan *entity.PerfmonData, sign context.Context) {
+func GetProcFPS(device *adb.Device, perfOptions entity.PerfOption, perfDataChan chan *entity.PerfmonData, exitCtx context.Context) {
 	if perfOptions.ProcFPS {
 		timer := time.Tick(time.Duration(int(IntervalTime * float64(time.Second))))
 		go func() {
 			for {
 				select {
-				case <-sign.Done():
+				case <-exitCtx.Done():
 					return
 				case <-timer:
 					go func() {
-						perfmonDataChan <- &entity.PerfmonData{
-							Process: getFPS(client),
+						perfDataChan <- &entity.PerfmonData{
+							Process: getFPS(device),
 						}
 					}()
 
@@ -545,20 +545,20 @@ func getFPS(client *adb.Device) *entity.ProcessInfo {
 	return processInfo
 }
 
-func GetProcCpu(client *adb.Device, perfOptions entity.PerfOption, perfmonDataChan chan *entity.PerfmonData, sign context.Context) {
+func GetProcCpu(device *adb.Device, perfOptions entity.PerfOption, perfDataChan chan *entity.PerfmonData, exitCtx context.Context) {
 	if perfOptions.ProcCPU {
-		getProcCpu(client)
+		getProcCpu(device)
 		time.Sleep(time.Duration(IntervalTime * float64(time.Second)))
 		timer := time.Tick(time.Duration(int(IntervalTime * float64(time.Second))))
 		go func() {
 			for {
 				select {
-				case <-sign.Done():
+				case <-exitCtx.Done():
 					return
 				case <-timer:
 					go func() {
-						perfmonDataChan <- &entity.PerfmonData{
-							Process: getProcCpu(client),
+						perfDataChan <- &entity.PerfmonData{
+							Process: getProcCpu(device),
 						}
 					}()
 
@@ -588,18 +588,18 @@ func getProcCpu(client *adb.Device) *entity.ProcessInfo {
 	return processInfo
 }
 
-func GetProcMem(client *adb.Device, perfOptions entity.PerfOption, perfmonDataChan chan *entity.PerfmonData, sign context.Context) {
+func GetProcMem(device *adb.Device, perfOptions entity.PerfOption, perfDataChan chan *entity.PerfmonData, exitCtx context.Context) {
 	if perfOptions.ProcMem {
 		timer := time.Tick(time.Duration(int(IntervalTime * float64(time.Second))))
 		go func() {
 			for {
 				select {
-				case <-sign.Done():
+				case <-exitCtx.Done():
 					return
 				case <-timer:
 					go func() {
-						perfmonDataChan <- &entity.PerfmonData{
-							Process: getProcMem(client),
+						perfDataChan <- &entity.PerfmonData{
+							Process: getProcMem(device),
 						}
 					}()
 

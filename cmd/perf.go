@@ -1,21 +1,4 @@
-/*
- *   sonic-android-supply  Supply of ADB.
- *   Copyright (C) 2022  SonicCloudOrg
- *
- *   This program is free software: you can redistribute it and/or modify
- *   it under the terms of the GNU Affero General Public License as published
- *   by the Free Software Foundation, either version 3 of the License, or
- *   (at your option) any later version.
- *
- *   This program is distributed in the hope that it will be useful,
- *   but WITHOUT ANY WARRANTY; without even the implied warranty of
- *   MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- *   GNU Affero General Public License for more details.
- *
- *   You should have received a copy of the GNU Affero General Public License
- *   along with this program.  If not, see <https://www.gnu.org/licenses/>.
- */
-package cmd
+package main
 
 import (
 	"context"
@@ -26,6 +9,7 @@ import (
 	"os/signal"
 	"regexp"
 	"sync"
+	"syscall"
 	"time"
 
 	"github.com/SonicCloudOrg/sonic-android-supply/src/adb"
@@ -37,7 +21,6 @@ import (
 var (
 	serial2      string
 	isFormat2    bool
-	isJson2      bool
 	perfOptions2 entity.PerfOption
 	pid2         int
 	packageName2 string
@@ -62,19 +45,17 @@ func init() {
 	perfCmd.Flags().BoolVar(&isForce2, "force-out", false, "force update pid perf data(applicable to applications being restarted by kill)")
 	perfCmd.Flags().IntVarP(&refreshTime2, "refresh", "r", 1000, "data refresh time (millisecond)")
 	perfCmd.Flags().BoolVarP(&isFormat2, "format", "f", false, "convert to JSON string and format")
-	perfCmd.Flags().BoolVarP(&isJson2, "json", "j", false, "convert to JSON string")
 	rootCmd.AddCommand(perfCmd)
 }
 
 var perfCmd = &cobra.Command{
 	Use:   "perf",
 	Short: "Get device performance",
-	Long:  "Get device performance",
-	RunE: func(cmd *cobra.Command, args []string) (err error) {
+	RunE: func(cmd *cobra.Command, args []string) error {
 		if serial2 == "" {
 			output, err := exec.Command("adb", "devices", "-l").CombinedOutput()
 			if err != nil {
-				log.Panic(err)
+				return err
 			}
 			re := regexp.MustCompile(`(?m)^([^\s]+)\s+device\s+(.+)$`)
 			matches := re.FindAllStringSubmatch(string(output), -1)
@@ -100,13 +81,10 @@ var perfCmd = &cobra.Command{
 		}
 		if pid != -1 && packageName == "" {
 			pidStr = fmt.Sprintf("%d", pid)
-			packageName, err = perfmonUtil.GetNameOnPid(device, pidStr)
-			if err != nil {
-				packageName = ""
-			}
+			packageName, _ = perfmonUtil.GetNameOnPid(device, pidStr)
 		}
 		sig := make(chan os.Signal, 1)
-		signal.Notify(sig, os.Interrupt, os.Kill)
+		signal.Notify(sig, os.Interrupt, syscall.SIGTERM, syscall.SIGINT)
 
 		if (pid == -1 && packageName == "") &&
 			!perfOptions2.SystemCPU &&
@@ -140,11 +118,12 @@ var perfCmd = &cobra.Command{
 		timer := time.Tick(time.Duration(int(perfmonUtil.IntervalTime * float64(time.Second))))
 		var mu sync.Mutex
 		var wg sync.WaitGroup
+		drop := true
 		for {
 			select {
 			case <-sig:
 				exitChancel()
-				os.Exit(0)
+				return nil
 			case <-timer:
 				go func() {
 					perfData := &entity.PerfmonData{
@@ -162,7 +141,7 @@ var perfCmd = &cobra.Command{
 						},
 					}
 
-					wg.Add(2)
+					wg.Add(7)
 					go func() {
 						defer wg.Done()
 						data := perfmonUtil.GetSystemCPU2(device, perfOptions2)
@@ -181,8 +160,59 @@ var perfCmd = &cobra.Command{
 							perfData.System.MemInfo = data.MemInfo
 						}
 					}()
+					go func() {
+						defer wg.Done()
+						data := perfmonUtil.GetSystemNetwork2(device, perfOptions2)
+						if data != nil {
+							mu.Lock()
+							defer mu.Unlock()
+							perfData.System.NetworkInfo = data.NetworkInfo
+						}
+					}()
+					go func() {
+						defer wg.Done()
+						data := perfmonUtil.GetProcCpu2(device, perfOptions2)
+						if data != nil {
+							mu.Lock()
+							defer mu.Unlock()
+							perfData.Process.CPUInfo = data.CPUInfo
+						}
+					}()
+					go func() {
+						defer wg.Done()
+						data := perfmonUtil.GetProcMem2(device, perfOptions2)
+						if data != nil {
+							mu.Lock()
+							defer mu.Unlock()
+							perfData.Process.MemInfo = data.MemInfo
+						}
+					}()
+					go func() {
+						defer wg.Done()
+						data := perfmonUtil.GetProcFPS2(device, perfOptions2)
+						if data != nil {
+							mu.Lock()
+							defer mu.Unlock()
+							perfData.Process.FPSInfo = data.FPSInfo
+						}
+					}()
+					go func() {
+						defer wg.Done()
+						data := perfmonUtil.GetProcThreads2(device, perfOptions2)
+						if data != nil {
+							mu.Lock()
+							defer mu.Unlock()
+							perfData.Process.ThreadInfo = data.ThreadInfo
+						}
+					}()
 					wg.Wait()
-					fmt.Println(perfData.ToFormat())
+					if drop {
+						drop = false
+					} else {
+						fmt.Println(perfData.ToJson())
+						fmt.Println()
+					}
+
 					// wait all goroutine done to do something
 				}()
 

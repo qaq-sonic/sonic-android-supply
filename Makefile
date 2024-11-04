@@ -7,7 +7,8 @@ build:
 	CGO_ENABLED=0 \
 	go build -a -ldflags "-s -w \
 	-X github.com/SonicCloudOrg/sonic-android-supply/pkg/version.REVISION=$(GIT_COMMIT)" \
-	-o sas
+	-o sas \
+	./cmd/*
 
 build-linux:
 	GIT_COMMIT=$$(git rev-list -1 HEAD) && \
@@ -16,7 +17,8 @@ build-linux:
 	GOARCH=amd64 \
 	go build -a -ldflags "-s -w \
 	-X github.com/SonicCloudOrg/sonic-android-supply/pkg/version.REVISION=$(GIT_COMMIT)" \
-	-o sas
+	-o sas \
+	./cmd/*
 
 version-set:
 	@next="$(TAG)" && \
